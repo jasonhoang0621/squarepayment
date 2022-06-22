@@ -1,48 +1,135 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <link rel="stylesheet" href="/app.css">
+    <script type="text/javascript" src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
 </head>
 
 <body>
-    <div>
-        <button>payment</button>
-    </div>
-</body>
+    <form id="payment-form">
+        <input type="number" name="amount" placeholder="Input amount" />
+        <div id="card-container"></div>
+        <button id="card-button" type="button">Pay</button>
+    </form>
+    <div id="payment-status-container"></div>
 
-<script>
-    document.querySelector('button').addEventListener('click', function () {
-        fetch('https://connect.squareupsandbox.com/v2/online-checkout/payment-links', {
-            method: 'POST',
-            headers: {
-                'Square-Version': '2022-06-16',
-                'Authorization': 'Bearer EAAAEPjQbHDd8I5qvu2PhBEjz73kgC7-aENNgi1V-uvWeH8LAjj81pXt8kpauPVy',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                "description": "test api",
-                "payment_note": "test api payment",
-                "source": "hello",
-                "quick_pay": {
-                    "location_id": "LRQAPNK9ATRPZ",
-                    "name": "nhan",
-                    "price_money": {
-                        "amount": 50000,
-                        "currency": "USD"
-                    }
+    <script>
+        const appId = 'sandbox-sq0idb-32h4JnupMEuuMsDfuf3bkg';
+        const locationId = 'LRQAPNK9ATRPZ';
+
+        async function initializeCard(payments) {
+            const card = await payments.card();
+            await card.attach('#card-container');
+            return card;
+        }
+
+        const form = document.getElementById('payment-form');
+
+        async function createPayment(token) {
+            const body = JSON.stringify({
+                locationId,
+                sourceId: token,
+                amount: form.amount.value,
+            });
+
+            const paymentResponse = await fetch('/payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body,
+            });
+
+            if (paymentResponse.ok) {
+                return paymentResponse.json();
+            }
+
+            const errorBody = await paymentResponse.text();
+            throw new Error(errorBody);
+        }
+
+        async function tokenize(paymentMethod) {
+            const tokenResult = await paymentMethod.tokenize();
+            if (tokenResult.status === 'OK') {
+                return tokenResult.token;
+            } else {
+                let errorMessage = `Tokenization failed with status: ${tokenResult.status}`;
+                if (tokenResult.errors) {
+                    errorMessage += ` and errors: ${JSON.stringify(
+                        tokenResult.errors
+                    )}`;
                 }
-            }),
-            mode: 'no-cors'
-        }).then(function (response) {
-            return response.json();
-        }).then(function (data) {
-            console.log(data);
+
+                throw new Error(errorMessage);
+            }
+        }
+
+        // status is either SUCCESS or FAILURE;
+        function displayPaymentResults(status) {
+            const statusContainer = document.getElementById(
+                'payment-status-container'
+            );
+            if (status === 'SUCCESS') {
+                statusContainer.classList.remove('is-failure');
+                statusContainer.classList.add('is-success');
+            } else {
+                statusContainer.classList.remove('is-success');
+                statusContainer.classList.add('is-failure');
+            }
+
+            statusContainer.style.visibility = 'visible';
+        }
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            if (!window.Square) {
+                throw new Error('Square.js failed to load properly');
+            }
+
+            let payments;
+            try {
+                payments = window.Square.payments(appId, locationId);
+            } catch {
+                const statusContainer = document.getElementById(
+                    'payment-status-container'
+                );
+                statusContainer.className = 'missing-credentials';
+                statusContainer.style.visibility = 'visible';
+                return;
+            }
+
+            let card;
+            try {
+                card = await initializeCard(payments);
+            } catch (e) {
+                console.error('Initializing Card failed', e);
+                return;
+            }
+
+            async function handlePaymentMethodSubmission(event, paymentMethod) {
+                event.preventDefault();
+
+                try {
+                    cardButton.disabled = true;
+                    const token = await tokenize(paymentMethod);
+                    const paymentResults = await createPayment(token);
+                    displayPaymentResults('SUCCESS');
+
+                    console.debug('Payment Success', paymentResults);
+                    cardButton.disabled = false;
+                } catch (e) {
+                    cardButton.disabled = false;
+                    displayPaymentResults('FAILURE');
+                    console.error(e.message);
+                }
+            }
+
+            const cardButton = document.getElementById('card-button');
+            cardButton.addEventListener('click', async function (event) {
+                await handlePaymentMethodSubmission(event, card);
+            });
         });
-    });
-</script>
+    </script>
+</body>
 
 </html>
