@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div>
+        <button>payment</button>
+    </div>
+</body>
+
+<script>
+    document.querySelector('button').addEventListener('click', function () {
+        fetch('https://connect.squareupsandbox.com/v2/online-checkout/payment-links', {
+            method: 'POST',
+            headers: {
+                'Square-Version': '2022-06-16',
+                'Authorization': 'Bearer EAAAEPjQbHDd8I5qvu2PhBEjz73kgC7-aENNgi1V-uvWeH8LAjj81pXt8kpauPVy',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                "idempotency_key": "cd9e25dc-d9f2-4430-aedb-61605070e95f",
+                "quick_pay": {
+                    "name": "Auto Detailing",
+                    "price_money": {
+                        "amount": 10000,
+                        "currency": "USD"
+                    },
+                    "location_id": "A9Y43N9ABXZBP"
+                }
+            })
+        }).then(function (response) {
+            return response.json();
+        }).then(function (data) {
+            console.log(data);
+        });
+    });
+</script>
+
+</html>
