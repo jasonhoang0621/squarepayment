@@ -24,16 +24,19 @@
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                "idempotency_key": "cd9e25dc-d9f2-4430-aedb-61605070e95f",
+                "description": "test api",
+                "payment_note": "test api payment",
+                "source": "hello",
                 "quick_pay": {
-                    "name": "Auto Detailing",
+                    "location_id": "LRQAPNK9ATRPZ",
+                    "name": "nhan",
                     "price_money": {
-                        "amount": 10000,
+                        "amount": 50000,
                         "currency": "USD"
-                    },
-                    "location_id": "A9Y43N9ABXZBP"
+                    }
                 }
-            })
+            }),
+            mode: 'no-cors'
         }).then(function (response) {
             return response.json();
         }).then(function (data) {
