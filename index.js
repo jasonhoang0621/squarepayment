@@ -2,7 +2,6 @@ const express = require('express');
 const { json, send } = require('micro');
 const retry = require('async-retry');
 const { ApiError, client: square } = require('./utils/square');
-// const { nanoid } = require('nanoid');
 const path = require('path');
 const { randomUUID } = require('crypto');
 const app = express();
@@ -16,7 +15,6 @@ app.get('/', function (req, res) {
 
 app.post('/payment', async function (req, res) {
     const payload = await json(req);
-    console.log(payload.amount)
     await retry(async (bail, attempt) => {
         try {
             console.log('Creating payment', { attempt });
