@@ -45,8 +45,6 @@ app.post('/payment', async function (req, res) {
                     orderId: result.payment.orderId,
                 },
             });
-
-            res.end();
         } catch (ex) {
             if (ex instanceof ApiError) {
                 console.error(ex.errors);
